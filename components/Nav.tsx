@@ -195,12 +195,12 @@ export default function Nav() {
                 danielshaulov4@gmail.com
               </a>
               <a
-                href="https://github.com/hickennoace"
+                href="https://github.com/danishaulov"
                 target="_blank"
                 rel="noreferrer"
                 className="block text-[15px] text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200"
               >
-                github.com/hickennoace
+                github.com/danishaulov
               </a>
             </motion.div>
           </motion.div>

@@ -156,7 +156,7 @@ export default function CommandPalette() {
         },
       },
       { id: "cv", label: t.cmdk.downloadCv, group: t.cmdk.actions, icon: Download, keywords: "resume", run: () => download("/Daniel%20Shaulov%20-%20Resume.pdf") },
-      { id: "gh", label: t.cmdk.github, group: t.cmdk.actions, icon: Github, run: () => { window.open("https://github.com/hickennoace", "_blank"); setOpen(false); } },
+      { id: "gh", label: t.cmdk.github, group: t.cmdk.actions, icon: Github, run: () => { window.open("https://github.com/danishaulov", "_blank"); setOpen(false); } },
       { id: "li", label: t.cmdk.linkedin, group: t.cmdk.actions, icon: Linkedin, run: () => { window.open("https://www.linkedin.com/in/danielshaulov/", "_blank"); setOpen(false); } },
     ];
   }, [t, theme, setTheme]);

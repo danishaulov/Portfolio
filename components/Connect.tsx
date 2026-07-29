@@ -21,8 +21,8 @@ const linkConfig: LinkConfig[] = [
   {
     Icon: Github,
     key: "githubLabel",
-    display: "hickennoace",
-    href: "https://github.com/hickennoace",
+    display: "danishaulov",
+    href: "https://github.com/danishaulov",
   },
 ];
 
