@@ -368,7 +368,7 @@ export default function Portfolio() {
                 </p>
                 <p>
                   <strong>English</strong>
-                  <span>Professional</span>
+                  <span>High proficiency</span>
                 </p>
                 <p>
                   <strong>Russian</strong>
