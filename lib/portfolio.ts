@@ -124,9 +124,9 @@ export const strengths = [
 export const experience = [
   {
     period: "2023–present",
-    title: "Security & Access Control",
+    title: "Shift Supervisor, Security & Access Control",
     place: "Team 3",
-    body: "Access control and operational security across multiple posts. Work that depends on attention, consistent procedures and reliable handovers alongside my studies.",
+    body: "Coordinate shift schedules and coverage, support the team and maintain access-control records. Work that depends on attention, consistent procedures and reliable handovers alongside my studies.",
   },
   {
     period: "2022–present",
