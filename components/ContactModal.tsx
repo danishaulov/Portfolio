@@ -1,275 +1,158 @@
 "use client";
-
-import { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { X, Send, CheckCircle, AlertCircle } from "lucide-react";
-import { EASE } from "@/lib/motion";
-import { lockScroll, unlockScroll } from "@/lib/scrollLock";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { X, Send, CheckCircle } from "lucide-react";
 import { useFocusTrap } from "@/lib/useFocusTrap";
-import { useLang } from "@/lib/i18n/LanguageProvider";
-
-type Status = "idle" | "sending" | "success" | "error";
-
-interface Props {
+import { lockScroll, unlockScroll } from "@/lib/scrollLock";
+export default function ContactModal({
+  isOpen,
+  onClose,
+}: {
   isOpen: boolean;
   onClose: () => void;
-}
-
-const inputClass =
-  "w-full px-4 py-3 rounded-xl bg-black/[0.03] dark:bg-white/[0.04] border border-black/[0.1] dark:border-white/[0.08] text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 text-[14px] outline-none focus:border-blue-500/60 focus:bg-blue-500/[0.03] dark:focus:bg-blue-500/[0.06] transition-all duration-200";
-
-export default function ContactModal({ isOpen, onClose }: Props) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
-  const [status, setStatus] = useState<Status>("idle");
-  const [errorMsg, setErrorMsg] = useState("");
-  const firstFieldRef = useRef<HTMLInputElement>(null);
-  const modalRef = useRef<HTMLDivElement>(null);
-  const { t } = useLang();
-
-  useFocusTrap(isOpen, modalRef);
-
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const firstField = useRef<HTMLInputElement>(null);
+  const [status, setStatus] = useState<
+    "idle" | "sending" | "success" | "error"
+  >("idle");
+  const [error, setError] = useState("");
+  useFocusTrap(isOpen, ref);
   useEffect(() => {
     if (!isOpen) return;
     lockScroll();
-    const id = setTimeout(() => firstFieldRef.current?.focus(), 80);
+    firstField.current?.focus();
+    const escape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", escape);
     return () => {
-      clearTimeout(id);
       unlockScroll();
+      window.removeEventListener("keydown", escape);
     };
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        // Defer to the command palette if it's stacked on top, so Escape
-        // dismisses only the topmost overlay (and doesn't wipe a half-typed message).
-        if (document.body.dataset.cmdkOpen) return;
-        setName(""); setEmail(""); setMessage("");
-        setStatus("idle"); setErrorMsg("");
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
   }, [isOpen, onClose]);
-
-  // Celebrate a successful send with a brand-coloured confetti burst.
-  useEffect(() => {
-    if (status !== "success") return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    let cancelled = false;
-    import("canvas-confetti").then(({ default: confetti }) => {
-      if (cancelled) return;
-      const colors = ["#3b82f6", "#6366f1", "#60a5fa", "#a5b4fc"];
-      const fire = (ratio: number, opts: object) =>
-        confetti({
-          origin: { y: 0.7 },
-          colors,
-          particleCount: Math.floor(180 * ratio),
-          ...opts,
-        });
-      fire(0.25, { spread: 26, startVelocity: 55 });
-      fire(0.2, { spread: 60 });
-      fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
-      fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
-      fire(0.1, { spread: 120, startVelocity: 45 });
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [status]);
-
-  const reset = () => {
-    setName(""); setEmail(""); setMessage("");
-    setStatus("idle"); setErrorMsg("");
-  };
-
-  const handleClose = () => { reset(); onClose(); };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (status === "sending") return;
+    const data = new FormData(e.currentTarget);
     setStatus("sending");
-    setErrorMsg("");
+    setError("");
     try {
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), email: email.trim(), message: message.trim() }),
+        body: JSON.stringify(Object.fromEntries(data)),
+        signal: AbortSignal.timeout(20000),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || t.contactModal.genericError);
+      const result = await res.json();
+      if (!res.ok || !result.success)
+        throw new Error(
+          result.error ||
+            "Your message could not be sent. Please try again or email me directly.",
+        );
       setStatus("success");
-    } catch (err: unknown) {
-      setErrorMsg(err instanceof Error ? err.message : t.contactModal.sendError);
+    } catch (err) {
+      setError(
+        err instanceof Error && err.name === "TimeoutError"
+          ? "The request timed out. Please try again or email me directly."
+          : err instanceof Error
+            ? err.message
+            : "Please try again or email me directly.",
+      );
       setStatus("error");
     }
   };
-
+  if (!isOpen) return null;
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          {/* Backdrop */}
-          <motion.div
-            key="backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            onClick={handleClose}
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
-            aria-hidden="true"
-          />
-
-          {/* Modal container */}
-          <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-4 sm:p-6 overflow-y-auto pointer-events-none">
-            <motion.div
-              ref={modalRef}
-              key="modal"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="contact-modal-title"
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ duration: 0.36, ease: EASE }}
-              onClick={(e) => e.stopPropagation()}
-              className="relative w-full max-w-lg pointer-events-auto bg-white dark:bg-[#0f0f0f] rounded-2xl border border-black/[0.1] dark:border-white/[0.1] shadow-[0_24px_80px_rgba(0,0,0,0.35)] max-h-[90dvh] overflow-y-auto my-6"
-            >
-              {/* Header */}
-              <div className="flex items-center justify-between px-6 pt-6 pb-5 border-b border-black/[0.07] dark:border-white/[0.06]">
-                <div>
-                  <p className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 tracking-[0.22em] uppercase mb-1">
-                    {t.contactModal.eyebrow}
-                  </p>
-                  <h2
-                    id="contact-modal-title"
-                    className="text-[20px] font-bold text-slate-900 dark:text-white tracking-tight"
-                  >
-                    {t.contactModal.title}
-                  </h2>
-                </div>
-                <button
-                  onClick={handleClose}
-                  aria-label={t.contactModal.closeAria}
-                  className="w-9 h-9 rounded-xl border border-black/[0.1] dark:border-white/[0.08] flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-white hover:border-blue-500/30 hover:bg-blue-500/[0.06] transition-all duration-200"
-                >
-                  <X size={16} strokeWidth={2} />
-                </button>
-              </div>
-
-              {/* Body */}
-              <div className="px-6 py-6">
-                {status === "success" ? (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.35 }}
-                    className="flex flex-col items-center text-center py-8 gap-4"
-                  >
-                    <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
-                      <CheckCircle size={26} className="text-blue-600 dark:text-blue-400" strokeWidth={1.5} />
-                    </div>
-                    <div>
-                      <p className="text-[17px] font-bold text-slate-900 dark:text-white mb-1.5">
-                        {t.contactModal.successTitle}
-                      </p>
-                      <p className="text-[14px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                        {t.contactModal.successBody}
-                      </p>
-                    </div>
-                    <button
-                      onClick={handleClose}
-                      className="mt-1 px-7 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-[13px] font-semibold transition-colors duration-200"
-                    >
-                      {t.contactModal.close}
-                    </button>
-                  </motion.div>
-                ) : (
-                  <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
-                    <div className="grid sm:grid-cols-2 gap-4">
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 tracking-[0.14em] uppercase">
-                          {t.contactModal.nameLabel}
-                        </label>
-                        <input
-                          ref={firstFieldRef}
-                          type="text"
-                          value={name}
-                          onChange={(e) => setName(e.target.value)}
-                          required
-                          placeholder={t.contactModal.namePlaceholder}
-                          className={inputClass}
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 tracking-[0.14em] uppercase">
-                          {t.contactModal.emailLabel}
-                        </label>
-                        <input
-                          type="email"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          required
-                          placeholder={t.contactModal.emailPlaceholder}
-                          className={inputClass}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 tracking-[0.14em] uppercase">
-                        {t.contactModal.messageLabel}
-                      </label>
-                      <textarea
-                        value={message}
-                        onChange={(e) => setMessage(e.target.value)}
-                        required
-                        rows={5}
-                        placeholder={t.contactModal.messagePlaceholder}
-                        className={`${inputClass} resize-none`}
-                      />
-                    </div>
-
-                    {status === "error" && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-red-500/[0.08] border border-red-500/20 text-red-600 dark:text-red-400 text-[13px]"
-                      >
-                        <AlertCircle size={15} strokeWidth={1.8} className="shrink-0" />
-                        {errorMsg}
-                      </motion.div>
-                    )}
-
-                    <button
-                      type="submit"
-                      disabled={status === "sending"}
-                      className="flex items-center justify-center gap-2.5 w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-60 disabled:cursor-not-allowed text-white text-[14px] font-semibold transition-colors duration-200 mt-1"
-                    >
-                      {status === "sending" ? (
-                        <>
-                          <span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                          {t.contactModal.sending}
-                        </>
-                      ) : (
-                        <>
-                          <Send size={14} strokeWidth={2} />
-                          {t.contactModal.send}
-                        </>
-                      )}
-                    </button>
-                  </form>
-                )}
-              </div>
-            </motion.div>
+    <div
+      className="modal-backdrop"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        ref={ref}
+        className="contact-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="contact-title"
+      >
+        <div className="modal-heading">
+          <h2 id="contact-title">Send a message.</h2>
+          <button aria-label="Close contact form" onClick={onClose}>
+            <X size={22} />
+          </button>
+        </div>
+        {status === "success" ? (
+          <div className="form-success" role="status">
+            <CheckCircle size={36} />
+            <h3>Message sent.</h3>
+            <p>Thanks for getting in touch. I’ll get back to you soon.</p>
+            <button className="button primary" onClick={onClose}>
+              Close
+            </button>
           </div>
-        </>
-      )}
-    </AnimatePresence>
+        ) : (
+          <form onSubmit={submit}>
+            <p className="form-intro">
+              Tell me about the role, your team, or what you have in mind.
+            </p>
+            <label htmlFor="contact-name">Name</label>
+            <input
+              ref={firstField}
+              id="contact-name"
+              name="name"
+              autoComplete="name"
+              required
+              maxLength={100}
+            />
+            <label htmlFor="contact-email">Email</label>
+            <input
+              id="contact-email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              maxLength={254}
+            />
+            <label htmlFor="contact-message">Message</label>
+            <textarea
+              id="contact-message"
+              name="message"
+              rows={4}
+              required
+              maxLength={5000}
+            />
+            <div className="form-trap" aria-hidden="true">
+              <label htmlFor="contact-website">Leave this empty</label>
+              <input
+                id="contact-website"
+                name="website"
+                autoComplete="off"
+                tabIndex={-1}
+              />
+            </div>
+            {error && (
+              <p role="alert" className="form-error">
+                {error}
+              </p>
+            )}
+            <button
+              className="button primary"
+              type="submit"
+              disabled={status === "sending"}
+            >
+              {status === "sending" ? "Sending…" : "Send message"}
+              <Send size={16} aria-hidden="true" />
+            </button>
+            <p className="form-alternative">
+              Or email{" "}
+              <a href="mailto:danielshaulov4@gmail.com">
+                danielshaulov4@gmail.com
+              </a>
+            </p>
+          </form>
+        )}
+      </div>
+    </div>
   );
 }
