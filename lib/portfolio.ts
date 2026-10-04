@@ -101,22 +101,22 @@ export const projects = [
 ];
 export const strengths = [
   {
-    title: "Comfortable in the detail",
+    title: "Excel beyond the basics",
     tools: "Excel & Power Query",
     body: "PivotTables, lookups and structured data preparation. Useful foundations for comparing records, checking totals and investigating differences.",
   },
   {
-    title: "Able to follow the numbers",
+    title: "Repeatable data checks",
     tools: "SQL & Python",
     body: "Querying transaction data, cleaning messy exports and building repeatable checks. Skills I can bring to reconciliations, exception checks and recurring reporting.",
   },
   {
-    title: "Clear about what a report says",
+    title: "Reporting with context",
     tools: "Power BI & DAX",
     body: "Turning a data model into understandable measures and reports. Connecting revenue, margins and operational drivers without losing the context.",
   },
   {
-    title: "Accountable for the work",
+    title: "Responsibility & follow-through",
     tools: "Discipline & communication",
     body: "Military service, security work and coordinating programmes taught me to follow procedures, stay composed and take responsibility for the details.",
   },

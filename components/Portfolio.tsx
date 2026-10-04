@@ -14,6 +14,7 @@ import {
   Copy,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
+import WorkShowcase from "./WorkShowcase";
 import { projects, strengths, experience } from "@/lib/portfolio";
 const ContactModal = dynamic(() => import("./ContactModal"));
 const filters = ["All work", "Finance", "Data", "Tools & apps"] as const;
@@ -29,6 +30,7 @@ export default function Portfolio() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
   const [filter, setFilter] = useState<string>("All work");
+  const [showAll, setShowAll] = useState(false);
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState(false);
   const menuButton = useRef<HTMLButtonElement>(null);
@@ -57,10 +59,14 @@ export default function Portfolio() {
       setCopyError(true);
     }
   };
-  const visibleProjects =
+  const filteredProjects =
     filter === "All work"
       ? projects
       : projects.filter((p) => p.category === filter);
+  const visibleProjects =
+    filter === "All work" && !showAll
+      ? filteredProjects.slice(0, 4)
+      : filteredProjects;
   return (
     <>
       <a className="skip-link" href="#main">
@@ -126,14 +132,14 @@ export default function Portfolio() {
               Shaulov<span className="name-period">.</span>
             </h1>
             <p className="hero-statement">
-              A head for numbers.
-              <br />A habit of asking why.
+              Accounting &amp;
+              <br />
+              financial analysis.
             </p>
             <p className="hero-description">
-              I study accounting at the Open University of Israel, with a
-              background in data and technology. I’m working towards an
-              Assistant Controller role, bringing careful analysis and practical
-              technical skills to the finance team.
+              Accounting student at the Open University of Israel. I combine
+              Excel, SQL, Python and Power BI with a focus on accurate reporting
+              and understanding the business behind the figures.
             </p>
             <div className="hero-actions">
               <a className="button primary" href="#work">
@@ -155,19 +161,23 @@ export default function Portfolio() {
               />
             </div>
             <figcaption>
-              <span>Accounting is the direction.</span>
-              <span>Curiosity is the constant.</span>
+              <span>Daniel Shaulov</span>
+              <span>Accounting student & independent builder</span>
             </figcaption>
-            <span className="portrait-note" aria-hidden="true">
-              Nice to meet you.
-            </span>
           </figure>
-          <div className="hero-foot">
-            <span>Working towards an Assistant Controller role</span>
-            <span>Excel, SQL, Python, Power BI</span>
-            <a href="#about">
-              A little more about me <ArrowDown size={14} aria-hidden="true" />
-            </a>
+          <div className="profile-summary">
+            <div>
+              <span>Career focus</span>
+              <strong>Assistant Controller</strong>
+            </div>
+            <div>
+              <span>Education</span>
+              <strong>Accounting · Open University</strong>
+            </div>
+            <div>
+              <span>Technical toolkit</span>
+              <strong>Excel / SQL / Python / Power BI</strong>
+            </div>
           </div>
         </section>
         <section id="about" className="section shell about-grid">
@@ -254,69 +264,27 @@ export default function Portfolio() {
               data quality and building useful tools.
             </p>
           </div>
-          <article className="featured-project">
-            <div className="featured-copy">
-              <span className="project-type">
-                Financial reporting / Power BI
-              </span>
-              <h3>
-                A business,
-                <br />
-                by the numbers.
-              </h3>
-              <p>
-                Sales are only part of the story. This report brings profit,
-                inventory and lost opportunities into the same conversation.
-              </p>
-              <a
-                className="button paper-button"
-                href={projects[0].href}
-                target="_blank"
-                rel="noreferrer"
-              >
-                Explore Car Company{" "}
-                <ArrowUpRight size={17} aria-hidden="true" />
-              </a>
-              <span className="data-note">
-                Independent project using synthetic data.
-              </span>
-            </div>
-            <a
-              className="report-preview"
-              href="/projects/car-company.png"
-              target="_blank"
-              rel="noreferrer"
-              aria-label="Open full-size Car Company report screenshot"
-            >
-              <Image
-                src="/projects/car-company.png"
-                alt="Car Company Power BI report showing sales, profit and margin breakdowns for a fictional importer"
-                width={1600}
-                height={900}
-                sizes="(max-width: 900px) 90vw, 58vw"
-              />
-              <span>
-                View the report up close <Plus size={16} aria-hidden="true" />
-              </span>
-            </a>
-          </article>
+          <WorkShowcase />
           <div className="project-toolbar">
             <div className="filters" role="group" aria-label="Filter projects">
               {filters.map((f) => (
                 <button
                   key={f}
                   aria-pressed={f === filter}
-                  onClick={() => setFilter(f)}
+                  onClick={() => {
+                    setFilter(f);
+                    setShowAll(false);
+                  }}
                 >
                   {f}
                 </button>
               ))}
             </div>
             <span className="project-count" aria-live="polite">
-              {visibleProjects.length} projects
+              {visibleProjects.length} of {filteredProjects.length} projects
             </span>
           </div>
-          <div className="project-list">
+          <div className="project-list" id="project-index">
             {visibleProjects.map((p) => (
               <article className="project-row" key={p.title}>
                 <div className="project-title">
@@ -359,6 +327,17 @@ export default function Portfolio() {
               </article>
             ))}
           </div>
+          {filter === "All work" && (
+            <button
+              className="show-projects"
+              aria-expanded={showAll}
+              aria-controls="project-index"
+              onClick={() => setShowAll(!showAll)}
+            >
+              {showAll ? "Show selected projects" : "Show all 8 projects"}
+              <Plus size={16} aria-hidden="true" />
+            </button>
+          )}
           <a
             className="text-link github-link"
             href="https://github.com/danishaulov"
@@ -411,7 +390,7 @@ export default function Portfolio() {
         </section>
         <section id="connect" className="section shell contact-section">
           <div>
-            <p className="section-kicker">Keep in touch</p>
+            <p className="section-kicker">For finance teams</p>
             <h2>
               Let’s start
               <br />a conversation.
@@ -461,12 +440,7 @@ export default function Portfolio() {
               href="/Daniel%20Shaulov%20-%20Resume.pdf"
               download
             >
-              <span>
-                Download CV
-                <small>
-                  July 2026 version · predates my move to accounting
-                </small>
-              </span>
+              <span>Download CV</span>
               <Download size={20} aria-hidden="true" />
             </a>
           </div>

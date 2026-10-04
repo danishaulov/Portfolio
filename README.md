@@ -18,7 +18,7 @@ Use Node.js 24, then `npm ci` and `npm run dev`. Run `npm run typecheck` and `np
 
 Self-hosted Manrope and Inter fonts, native scrolling, light/dark themes, visible keyboard focus, mobile navigation, and reduced-motion support. English content follows the existing site's language.
 
-The downloadable PDF remains the previous CV, uploaded in July 2026, and is labelled as predating the move to accounting. Replace it with an approved updated resume, then remove the version note. The accounting degree's year and GPA are deliberately omitted because they have not been confirmed.
+The downloadable PDF remains the previous CV, uploaded in July 2026, and should be replaced with an approved updated resume when available. The site intentionally does not display a CV update date. The accounting degree's year and GPA are deliberately omitted because they have not been confirmed.
 
 ## Deployment
 
